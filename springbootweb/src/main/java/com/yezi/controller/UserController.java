@@ -10,6 +10,7 @@ import com.yezi.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -17,11 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @Slf4j
 @RequestMapping("/user")
 public class UserController {
+    @Autowired
+    RedisTemplate redisTemplate;
     @Autowired
     UserService userService;
     @RequestMapping("/sendMsg")
@@ -38,8 +42,9 @@ public class UserController {
             //SMSUtils.sendMessage("瑞吉外卖","",phone,code);
 
             //需要将生成的验证码保存到Session
-            session.setAttribute(phone,code);
-
+//            session.setAttribute(phone,code);
+//            将生成的验证码保存到Redis缓存中
+            redisTemplate.opsForValue().set(phone,code,5, TimeUnit.MINUTES);
             return R.success("手机验证码短信发送成功");
         }
 
@@ -52,7 +57,9 @@ public class UserController {
         //获取验证码
         String code = map.get("code").toString();
 //        从session获取验证码；
-        String codeSession = session.getAttribute(phone).toString();
+//        String codeSession = session.getAttribute(phone).toString();
+//        从Redis缓存中获得验证码
+        String codeSession = (String) redisTemplate.opsForValue().get(phone);
         if(codeSession != null && codeSession.equals(code)){
             LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(User::getPhone,phone);
@@ -64,6 +71,8 @@ public class UserController {
                 userService.save(user);
             }
             session.setAttribute("userId",user.getId());
+//            用户登陆成功，把缓存删掉
+            redisTemplate.delete(phone);
             return R.success(user);
         }
         return R.error("错误");

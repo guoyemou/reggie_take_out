@@ -37,7 +37,10 @@ public class CommonController {
     @GetMapping("/download")
     public R<String> fileDownload(String name, HttpServletResponse response){
         try {
-            FileInputStream fileInputStream = new FileInputStream("D:\\"+name);
+            if(name == ""){
+                return R.error("失败");
+            }
+            FileInputStream fileInputStream  = new FileInputStream(new File("D:\\img\\"+name));
             ServletOutputStream outputStream = response.getOutputStream();
             int len = 0;
             byte[] bytes = new byte[1024];

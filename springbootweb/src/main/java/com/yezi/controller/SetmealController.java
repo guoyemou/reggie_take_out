@@ -14,11 +14,14 @@ import com.yezi.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,6 +38,7 @@ public class SetmealController {
      * @return
      */
     @PostMapping
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> saveSetmeal(@RequestBody SetmealDto setmealDto){
         setmealService.saveSetmeal(setmealDto);
         return R.success("添加成功");
@@ -46,6 +50,7 @@ public class SetmealController {
      * @return
      */
     @DeleteMapping
+    @CacheEvict(value = "setmealCache",allEntries = true)
     public R<String> deleteByIdsSetmeal(Long[] ids){
         List<Long> asList = Arrays.asList(ids);
         setmealService.removeByIds(asList);
@@ -98,5 +103,19 @@ public class SetmealController {
         }).collect(Collectors.toList());
         page1.setRecords(collect);
         return R.success(page1);
+    }
+    /**
+     * 查询套餐菜品，
+     * @param
+     * @return
+     */
+    @Cacheable(value = "setmealCache",key = "#setmeal.categoryId+'_'+#setmeal.status")
+    @GetMapping("/list")
+    public R<List<Setmeal>> list(Setmeal setmeal){
+        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(setmeal.getCategoryId() != null,Setmeal::getCategoryId,setmeal.getCategoryId());
+        queryWrapper.eq(setmeal.getStatus() != null,Setmeal::getStatus,setmeal.getStatus());
+        List<Setmeal> list = setmealService.list(queryWrapper);
+        return  R.success(list);
     }
 }

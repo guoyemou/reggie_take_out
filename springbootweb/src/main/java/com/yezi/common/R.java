@@ -2,12 +2,13 @@ package com.yezi.common;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 //返回结果类
 @Data
-public class R<T> {
+public class R<T> implements Serializable {
     private int code;
     private String msg;
     private T data;

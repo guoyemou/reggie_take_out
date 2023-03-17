@@ -137,7 +137,7 @@ public class DishController {
     }
 
     /**
-     * 查询套餐菜品，用来新建套餐回显数据
+     * 查询菜品，用来新建套餐回显数据
      * @param
      * @return
      */
